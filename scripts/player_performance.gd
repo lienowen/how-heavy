@@ -23,7 +23,8 @@ func _physics_process(delta: float) -> void:
 	var horizontal_before := velocity.x
 	super(delta)
 	pose_time += delta
-	stride_phase += delta * clampf(absf(velocity.x) / 22.0, 4.0, 13.5)
+	var weight_speed := 1.12 if weight <= 3 else (0.82 if weight >= 9 else 1.0)
+	stride_phase += delta * clampf(absf(velocity.x) / 22.0, 4.0, 13.5) * weight_speed
 	if absf(velocity.x) > 8.0: facing = signf(velocity.x)
 	if forced_pose_time > 0.0:
 		forced_pose_time -= delta
@@ -67,27 +68,37 @@ func animation_name() -> String:
 
 func _draw() -> void:
 	if sprite_sheet == null: return
+
 	var source := Rect2(700, 95, 590, 690)
-	var height := 104.0
+	var height := 108.0
+	var body_scale := Vector2(1.0, 1.0)
+	var state_color := ProductionTheme.GREEN
 	if weight <= 3:
 		source = Rect2(90, 75, 590, 700)
-		height = 112.0
+		height = 118.0
+		body_scale = Vector2(0.86, 1.08)
+		state_color = ProductionTheme.CYAN
 	elif weight >= 9:
 		source = Rect2(1250, 175, 692, 620)
-		height = 92.0
+		height = 108.0
+		body_scale = Vector2(1.24, 0.94)
+		state_color = ProductionTheme.ORANGE
+
 	var width := source.size.x / source.size.y * height
 	var offset := Vector2.ZERO
 	var rotation := 0.0
 	var scale_value := Vector2.ONE
 	var ring_scale := 1.0
 	var stride := sin(stride_phase)
+
 	match pose:
 		Pose.IDLE:
-			offset.y = sin(pose_time * 2.0) * 0.9
+			offset.y = sin(pose_time * (2.7 if weight <= 3 else 1.8)) * (1.4 if weight <= 3 else 0.7)
 			rotation = sin(pose_time * 1.3) * 0.008
 		Pose.WALK:
-			offset = Vector2(stride * 1.5, -absf(stride) * 2.7)
-			rotation = stride * 0.035 * facing
+			var bob := 3.4 if weight <= 3 else (1.8 if weight >= 9 else 2.7)
+			offset = Vector2(stride * 1.7, -absf(stride) * bob)
+			rotation = stride * (0.045 if weight <= 3 else 0.028) * facing
 			scale_value = Vector2(1.0 - absf(stride) * 0.018, 1.0 + absf(stride) * 0.025)
 		Pose.TAKEOFF:
 			scale_value = Vector2(1.1, 0.88)
@@ -100,12 +111,13 @@ func _draw() -> void:
 			rotation = 0.055 * facing
 		Pose.LAND:
 			var settle := 1.0 - clampf(pose_time / 0.16, 0.0, 1.0)
-			scale_value = Vector2(1.0 + settle * 0.18, 1.0 - settle * 0.2)
-			offset.y = settle * 7.0
+			var heavy_boost := 1.45 if weight >= 9 else 1.0
+			scale_value = Vector2(1.0 + settle * 0.18 * heavy_boost, 1.0 - settle * 0.2 * heavy_boost)
+			offset.y = settle * 7.0 * heavy_boost
 		Pose.EXCHANGE:
 			var wave := sin(clampf(pose_time / 0.34, 0.0, 1.0) * PI)
 			scale_value = Vector2(1.0 - wave * 0.08, 1.0 + wave * 0.09)
-			ring_scale = 1.0 + wave * 0.35
+			ring_scale = 1.0 + wave * 0.42
 		Pose.IMPACT:
 			var recoil := 1.0 - clampf(pose_time / 0.28, 0.0, 1.0)
 			scale_value = Vector2(1.0 + recoil * 0.22, 1.0 - recoil * 0.18)
@@ -118,18 +130,21 @@ func _draw() -> void:
 		Pose.VICTORY:
 			var lift := sin(clampf(pose_time / 0.42, 0.0, 1.0) * PI)
 			offset.y = -lift * 8.0
-			ring_scale = 1.0 + lift * 0.25
+			ring_scale = 1.0 + lift * 0.3
 
-	var shadow_radius := lerpf(25.0, 42.0, float(weight - 2) / 8.0)
+	var shadow_radius := lerpf(23.0, 47.0, float(weight - 2) / 8.0)
 	if pose == Pose.RISE or pose == Pose.FALL: shadow_radius *= 0.82
 	draw_ellipse_shadow(Vector2(0, 2), shadow_radius)
+
+	# A soft state halo makes weight changes readable even on small H5 canvases.
+	draw_circle(Vector2(0, -48), 43.0 if weight <= 3 else (55.0 if weight >= 9 else 47.0), Color(state_color, 0.08))
 	if pose == Pose.EXCHANGE or pose == Pose.VICTORY:
-		draw_arc(Vector2(0, -48) + offset, 48.0 * ring_scale, 0, TAU, 64, Color(0.47, 0.79, 0.81, 0.86), 3.0)
-		draw_arc(Vector2(0, -48) + offset, 57.0 * ring_scale, -PI * 0.7, PI * 0.3, 42, Color(0.88, 0.74, 0.4, 0.72), 2.0)
-	draw_set_transform(offset, rotation, Vector2(scale_value.x * facing, scale_value.y))
+		draw_arc(Vector2(0, -48) + offset, 48.0 * ring_scale, 0, TAU, 64, Color(state_color, 0.92), 4.0)
+		draw_arc(Vector2(0, -48) + offset, 59.0 * ring_scale, -PI * 0.7, PI * 0.3, 42, Color(1, 1, 1, 0.72), 2.0)
+
+	draw_set_transform(offset, rotation, Vector2(scale_value.x * body_scale.x * facing, scale_value.y * body_scale.y))
 	draw_texture_rect_region(sprite_sheet, Rect2(-width * 0.5, -height, width, height), source)
 	if pose == Pose.WALK:
-		draw_line(Vector2(-12, -4), Vector2(-12 + stride * 10.0, 2), Color("d7b85a"), 3)
-		draw_line(Vector2(12, -4), Vector2(12 - stride * 10.0, 2), Color("d7b85a"), 3)
+		draw_line(Vector2(-12, -4), Vector2(-12 + stride * 10.0, 2), Color(state_color, 0.75), 3)
+		draw_line(Vector2(12, -4), Vector2(12 - stride * 10.0, 2), Color(state_color, 0.75), 3)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
