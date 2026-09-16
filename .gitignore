@@ -1,0 +1,6 @@
+.godot/
+build/windows/
+release/packages/
+*.tmp
+*.log
+

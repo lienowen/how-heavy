@@ -1,0 +1,13 @@
+api_name,display_name,description,trigger
+FIRST_TRADE,Nothing Stays the Same,Trade weight for the first time,First successful exchange
+LIGHT_STEP,Light as a Question,Reach the far side while light,Complete room 1
+HOLD_FAST,Hold Fast,Cross a full wind corridor without falling,Complete room 4
+BREAK_THE_MEASURE,Break the Measure,Shatter your first fragile floor,First heavy break
+CHAPTER_MEASURED,Measured,Complete Chapter I,Complete room 6
+TRUE_BALANCE,In Balance,Complete Chapter II,Complete room 12
+CARRIED_FORWARD,Momentum,Complete Chapter III,Complete room 18
+NO_FALLS,Sure Footing,Complete a room without falling,Room complete with zero deaths
+NO_TRADE,What You Already Carry,Complete an eligible room without trading,Eligible room complete with zero exchanges
+THE_LAST_EXCHANGE,The Last Exchange,Reach the final measure,Enter room 24
+RELEASED,An Open Door,Choose to leave the weight behind,Release ending
+CARRIED,By Choice,Choose to carry the weight onward,Carry ending

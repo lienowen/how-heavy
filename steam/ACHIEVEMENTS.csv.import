@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://7doqg0b0lod6"
+
+[deps]
+
+files=["res://steam/ACHIEVEMENTS.display.translation", "res://steam/ACHIEVEMENTS.description.translation", "res://steam/ACHIEVEMENTS.trigger.translation"]
+
+source_file="res://steam/ACHIEVEMENTS.csv"
+dest_files=["res://steam/ACHIEVEMENTS.display.translation", "res://steam/ACHIEVEMENTS.description.translation", "res://steam/ACHIEVEMENTS.trigger.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
