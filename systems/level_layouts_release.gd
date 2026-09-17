@@ -3,19 +3,17 @@ extends "res://systems/level_layouts.gd"
 func room(id: int) -> Dictionary:
 	var result: Dictionary = super(id).duplicate(true)
 	if id == 1:
-		# Room 1 is now a focused onboarding slice: become light to clear one gap,
-		# then become heavy to push through one obvious headwind. No gate puzzle,
-		# no forced drop, no extra state changes.
+		# Clear first-room teaching beat: light for the gap, heavy for the wind.
 		result.platforms = [
-			[0, 670, 520, 150],
-			[730, 670, 870, 150],
+			[0, 670, 500, 150],
+			[840, 670, 760, 150],
 			[1600, 670, 1950, 150],
 		]
 		result.stones = [
-			[285, 625, 2],
-			[930, 625, 10],
+			[300, 625, 2],
+			[1040, 625, 10],
 		]
-		result.wind = [[1080, 1510, 620]]
+		result.wind = [[1760, 2580, 700]]
 		result.gates = []
 		result.movers = []
 		result.springs = []
