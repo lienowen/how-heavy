@@ -10,6 +10,7 @@ var forced_pose_time := 0.0
 var previous_grounded := false
 var previous_vertical_speed := 0.0
 var stride_phase := 0.0
+var wind_visual := 0.0
 
 func _ready() -> void:
 	super()
@@ -26,6 +27,8 @@ func _physics_process(delta: float) -> void:
 	var weight_speed := 1.12 if weight <= 3 else (0.82 if weight >= 9 else 1.0)
 	stride_phase += delta * clampf(absf(velocity.x) / 22.0, 4.0, 13.5) * weight_speed
 	if absf(velocity.x) > 8.0: facing = signf(velocity.x)
+	var target_wind := clampf(wind_force / 900.0, -1.0, 1.0)
+	wind_visual = lerpf(wind_visual, target_wind, clampf(delta * 6.5, 0.0, 1.0))
 	if forced_pose_time > 0.0:
 		forced_pose_time -= delta
 	else:
@@ -66,6 +69,35 @@ func play_victory() -> void: set_forced_pose(Pose.VICTORY, 2.0)
 func animation_name() -> String:
 	return Pose.keys()[pose].to_lower()
 
+func wind_responsiveness() -> float:
+	if weight <= 3: return 1.25
+	if weight >= 9: return 0.42
+	return 0.78
+
+func draw_wind_clothing(anchor: Vector2, response: float) -> void:
+	if absf(wind_visual) < 0.04: return
+	# The scarf is a readable proxy for loose clothing. It always trails with the air,
+	# independent of which way the character happens to face.
+	var trail_dir := -signf(wind_visual)
+	var strength := absf(wind_visual) * response
+	var flutter := sin(pose_time * (8.0 + strength * 5.0)) * (4.0 + strength * 4.0)
+	var length := 28.0 + strength * 42.0
+	var p0 := anchor
+	var p1 := anchor + Vector2(trail_dir * length * 0.38, -3.0 + flutter * 0.25)
+	var p2 := anchor + Vector2(trail_dir * length * 0.72, 3.0 - flutter * 0.45)
+	var p3 := anchor + Vector2(trail_dir * length, 7.0 + flutter * 0.55)
+	var cloth := PackedVector2Array([
+		p0 + Vector2(0, -5),
+		p1 + Vector2(0, -4),
+		p2 + Vector2(0, -3),
+		p3,
+		p2 + Vector2(0, 4),
+		p1 + Vector2(0, 5),
+		p0 + Vector2(0, 5),
+	])
+	draw_colored_polygon(cloth, Color(ProductionTheme.CYAN, 0.88))
+	draw_polyline(PackedVector2Array([p0, p1, p2, p3]), Color(1, 1, 1, 0.62), 1.5, true)
+
 func _draw() -> void:
 	if sprite_sheet == null: return
 
@@ -90,6 +122,8 @@ func _draw() -> void:
 	var scale_value := Vector2.ONE
 	var ring_scale := 1.0
 	var stride := sin(stride_phase)
+	var response := wind_responsiveness()
+	var wind_strength := absf(wind_visual)
 
 	match pose:
 		Pose.IDLE:
@@ -132,6 +166,16 @@ func _draw() -> void:
 			offset.y = -lift * 8.0
 			ring_scale = 1.0 + lift * 0.3
 
+	# Lean into a headwind and away with a tailwind. Light characters visibly fight it;
+	# heavy characters stay planted. The wind value is world-space, so this also works
+	# when the player turns around inside the same gust.
+	if pose not in [Pose.FAILURE, Pose.VICTORY] and wind_strength > 0.03:
+		var lean := wind_visual * deg_to_rad(8.5) * response
+		rotation += lean
+		offset.x += wind_visual * 3.5 * response
+		if is_on_floor():
+			scale_value.y *= 1.0 - wind_strength * 0.025 * response
+
 	var shadow_radius := lerpf(23.0, 47.0, float(weight - 2) / 8.0)
 	if pose == Pose.RISE or pose == Pose.FALL: shadow_radius *= 0.82
 	draw_ellipse_shadow(Vector2(0, 2), shadow_radius)
@@ -141,6 +185,9 @@ func _draw() -> void:
 	if pose == Pose.EXCHANGE or pose == Pose.VICTORY:
 		draw_arc(Vector2(0, -48) + offset, 48.0 * ring_scale, 0, TAU, 64, Color(state_color, 0.92), 4.0)
 		draw_arc(Vector2(0, -48) + offset, 59.0 * ring_scale, -PI * 0.7, PI * 0.3, 42, Color(1, 1, 1, 0.72), 2.0)
+
+	# Draw loose clothing behind the body before the sprite itself.
+	draw_wind_clothing(Vector2(0, -height * 0.70) + offset, response)
 
 	draw_set_transform(offset, rotation, Vector2(scale_value.x * body_scale.x * facing, scale_value.y * body_scale.y))
 	draw_texture_rect_region(sprite_sheet, Rect2(-width * 0.5, -height, width, height), source)
