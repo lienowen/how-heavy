@@ -13,78 +13,63 @@ func build_hud() -> void:
 	ui_root.theme = ProductionTheme.build()
 	layer.add_child(ui_root)
 
-	var top := MarginContainer.new()
-	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top.offset_left = 20
-	top.offset_top = 14
-	top.offset_right = -20
-	top.offset_bottom = 70
-	ui_root.add_child(top)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	top.add_child(row)
-
-	# Compact dark weight chip: strong hierarchy without a large white card.
+	# One compact status chip only. Gameplay owns the screen.
 	var weight_card := PanelContainer.new()
-	weight_card.custom_minimum_size = Vector2(184, 50)
-	weight_card.add_theme_stylebox_override("panel", ProductionTheme.panel(Color(0.08,0.20,0.30,0.92), Color(1,1,1,0.18), 1, 15))
-	row.add_child(weight_card)
+	weight_card.position = Vector2(18, 16)
+	weight_card.size = Vector2(170, 48)
+	weight_card.add_theme_stylebox_override("panel", ProductionTheme.panel(Color(0.06,0.14,0.20,0.90), Color(1,1,1,0.14), 1, 14))
+	ui_root.add_child(weight_card)
 	var weight_row := HBoxContainer.new()
 	weight_row.add_theme_constant_override("separation", 6)
 	weight_card.add_child(weight_row)
 	weight_dial = DialType.new()
-	weight_dial.custom_minimum_size = Vector2(44,44)
+	weight_dial.custom_minimum_size = Vector2(42,42)
 	weight_row.add_child(weight_dial)
 	var copy := VBoxContainer.new()
 	copy.alignment = BoxContainer.ALIGNMENT_CENTER
 	weight_row.add_child(copy)
 	var eyebrow := Label.new()
 	eyebrow.text = "WEIGHT"
-	eyebrow.add_theme_font_size_override("font_size", 9)
-	eyebrow.add_theme_color_override("font_color", Color(0.78,0.88,0.94,0.9))
+	eyebrow.add_theme_font_size_override("font_size", 8)
+	eyebrow.add_theme_color_override("font_color", Color(0.78,0.88,0.94,0.84))
 	copy.add_child(eyebrow)
 	weight_label = Label.new()
-	weight_label.add_theme_font_size_override("font_size", 17)
+	weight_label.add_theme_font_size_override("font_size", 16)
 	weight_label.add_theme_color_override("font_color", Color.WHITE)
 	copy.add_child(weight_label)
 
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(spacer)
-
 	chapter_label = Label.new()
-	chapter_label.custom_minimum_size = Vector2(340,42)
+	chapter_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	chapter_label.position = Vector2(-170, 18)
+	chapter_label.size = Vector2(340, 30)
 	chapter_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	chapter_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	chapter_label.add_theme_font_size_override("font_size", 15)
-	chapter_label.add_theme_color_override("font_color", Color("23455d"))
-	row.add_child(chapter_label)
+	chapter_label.add_theme_font_size_override("font_size", 13)
+	chapter_label.add_theme_color_override("font_color", Color(0.10,0.24,0.32,0.72))
+	ui_root.add_child(chapter_label)
 
-	var spacer_two := Control.new()
-	spacer_two.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(spacer_two)
-
+	# Keep stats available but visually secondary.
 	stats_label = Label.new()
-	stats_label.custom_minimum_size = Vector2(210,42)
+	stats_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	stats_label.position = Vector2(-228, 18)
+	stats_label.size = Vector2(210, 26)
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	stats_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	stats_label.add_theme_font_size_override("font_size", 10)
-	stats_label.add_theme_color_override("font_color", Color(0.20,0.35,0.44,0.62))
-	row.add_child(stats_label)
+	stats_label.add_theme_font_size_override("font_size", 9)
+	stats_label.add_theme_color_override("font_color", Color(0.12,0.28,0.36,0.48))
+	ui_root.add_child(stats_label)
 
-	# Interaction prompt appears as a small contextual pill near the bottom.
 	var hint_panel := PanelContainer.new()
 	hint_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	hint_panel.position = Vector2(-210,-42)
-	hint_panel.size = Vector2(420,32)
-	hint_panel.add_theme_stylebox_override("panel", ProductionTheme.panel(Color(0.06,0.16,0.22,0.84), Color(1,1,1,0.18), 1, 12))
+	hint_panel.position = Vector2(-185,-38)
+	hint_panel.size = Vector2(370,28)
+	hint_panel.add_theme_stylebox_override("panel", ProductionTheme.panel(Color(0.05,0.13,0.18,0.72), Color(1,1,1,0.10), 1, 11))
 	ui_root.add_child(hint_panel)
 	hint_label = Label.new()
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hint_label.add_theme_font_size_override("font_size", 11)
-	hint_label.add_theme_color_override("font_color", Color.WHITE)
+	hint_label.add_theme_font_size_override("font_size", 10)
+	hint_label.add_theme_color_override("font_color", Color(1,1,1,0.90))
 	hint_label.text = base_hint()
 	hint_panel.add_child(hint_label)
 
@@ -113,10 +98,10 @@ func build_first_session_tutorial() -> void:
 	super()
 	var panel := tutorial_label.get_parent() as PanelContainer
 	panel.theme = ProductionTheme.build()
-	panel.position = Vector2(440,82)
-	panel.size = Vector2(400,38)
-	panel.add_theme_stylebox_override("panel", ProductionTheme.panel(Color(0.06,0.16,0.22,0.78), Color(1,1,1,0.15), 1, 13))
-	tutorial_label.add_theme_font_size_override("font_size", 12)
+	panel.position = Vector2(455,72)
+	panel.size = Vector2(370,34)
+	panel.add_theme_stylebox_override("panel", ProductionTheme.panel(Color(0.05,0.13,0.18,0.72), Color(1,1,1,0.10), 1, 12))
+	tutorial_label.add_theme_font_size_override("font_size", 11)
 	tutorial_label.add_theme_color_override("font_color", Color.WHITE)
 	tutorial_label.add_theme_color_override("font_shadow_color", Color(0,0,0,0))
 
@@ -132,4 +117,4 @@ func build_touch_controls() -> void:
 	super()
 	for node in touch_layer.find_children("*", "Button", true, false):
 		node.theme = ProductionTheme.build()
-		node.modulate = Color(1,1,1,0.92)
+		node.modulate = Color(1,1,1,0.90)
