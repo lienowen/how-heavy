@@ -79,7 +79,7 @@ func draw_wind_clothing(anchor: Vector2, response: float) -> void:
 	var trail_dir := -signf(wind_visual)
 	var strength := absf(wind_visual) * response
 	var flutter := sin(pose_time * (8.0 + strength * 5.0)) * (4.0 + strength * 4.0)
-	var length := 30.0 + strength * 44.0
+	var length := 34.0 + strength * 50.0
 	var p0 := anchor
 	var p1 := anchor + Vector2(trail_dir * length * 0.38, -3.0 + flutter * 0.25)
 	var p2 := anchor + Vector2(trail_dir * length * 0.72, 3.0 - flutter * 0.45)
@@ -94,17 +94,17 @@ func _draw() -> void:
 	if sprite_sheet == null: return
 
 	var source := Rect2(700, 95, 590, 690)
-	var height := 124.0
+	var height := 146.0
 	var body_scale := Vector2(1.0, 1.0)
 	var state_color := ProductionTheme.GREEN
 	if weight <= 3:
 		source = Rect2(90, 75, 590, 700)
-		height = 132.0
+		height = 154.0
 		body_scale = Vector2(0.86, 1.08)
 		state_color = ProductionTheme.CYAN
 	elif weight >= 9:
 		source = Rect2(1250, 175, 692, 620)
-		height = 126.0
+		height = 148.0
 		body_scale = Vector2(1.24, 0.94)
 		state_color = ProductionTheme.ORANGE
 
@@ -159,16 +159,16 @@ func _draw() -> void:
 			ring_scale = 1.0 + lift * 0.3
 
 	if pose not in [Pose.FAILURE, Pose.VICTORY] and wind_strength > 0.03:
-		rotation += wind_visual * deg_to_rad(9.5) * response
-		offset.x += wind_visual * 4.0 * response
+		rotation += wind_visual * deg_to_rad(10.5) * response
+		offset.x += wind_visual * 5.0 * response
 		if is_on_floor(): scale_value.y *= 1.0 - wind_strength * 0.025 * response
 
-	var shadow_radius := lerpf(26.0, 51.0, float(weight - 2) / 8.0)
+	var shadow_radius := lerpf(30.0, 58.0, float(weight - 2) / 8.0)
 	if pose == Pose.RISE or pose == Pose.FALL: shadow_radius *= 0.82
 	draw_ellipse_shadow(Vector2(0, 2), shadow_radius)
 
 	if pose == Pose.EXCHANGE or pose == Pose.VICTORY:
-		draw_arc(Vector2(0, -55) + offset, 54.0 * ring_scale, 0, TAU, 64, Color(state_color, 0.9), 4.0)
+		draw_arc(Vector2(0, -62) + offset, 58.0 * ring_scale, 0, TAU, 64, Color(state_color, 0.9), 4.0)
 
 	draw_wind_clothing(Vector2(0, -height * 0.70) + offset, response)
 	draw_set_transform(offset, rotation, Vector2(scale_value.x * body_scale.x * facing, scale_value.y * body_scale.y))
