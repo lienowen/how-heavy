@@ -69,42 +69,90 @@ func _draw() -> void:
 			draw_circle(Vector2(splash_x, float(item[1]) + 18.0 + (i % 2) * 10.0), 5.0, Color(1, 1, 1, 0.65))
 
 func draw_wind_zone(start: float, finish: float, force: float) -> void:
-	# Wind is invisible in real life, so sell it through moving streaks, dust and nearby motion.
-	# Positive force is a headwind that travels from right to left.
+	# Wind is invisible: nearby objects provide the strongest visual reference.
+	# Positive force in gameplay pushes toward the left, so fabric and debris trail left.
 	var span := maxf(80.0, finish - start)
-	var speed := 150.0 + force * 0.12
-	var alpha := clampf(0.28 + force / 3000.0, 0.3, 0.62)
+	var speed := 150.0 + absf(force) * 0.12
+	var alpha := clampf(0.24 + absf(force) / 3200.0, 0.28, 0.58)
+	var wind_dir := -1.0 if force >= 0.0 else 1.0
+	var strength := clampf(absf(force) / 900.0, 0.25, 1.0)
+
+	# Flag poles at the beginning/middle/end make direction obvious before the player enters.
+	for i in range(3):
+		var pole_x := lerpf(start + 45.0, finish - 45.0, float(i) / 2.0)
+		draw_wind_flag(Vector2(pole_x, 636.0), wind_dir, strength, i)
+
+	# Grass tufts bend with the same wind. This keeps the air connected to the ground plane.
+	for i in range(11):
+		var grass_x := start + 24.0 + fposmod(float(i * 61), maxf(70.0, span - 45.0))
+		draw_wind_grass(Vector2(grass_x, 640.0), wind_dir, strength, i)
 
 	# Sparse animated streamlines. No colored rectangle: the air itself appears to move.
 	for row in range(7):
 		var y := 430.0 + row * 31.0
 		var lane_phase := fposmod(visual_time * speed + row * 83.0, span + 160.0)
-		var head_x := finish + 80.0 - lane_phase
+		var head_x := finish + 80.0 - lane_phase if wind_dir < 0.0 else start - 80.0 + lane_phase
 		for repeat in range(2):
-			var x := head_x + repeat * (span * 0.58)
+			var x := head_x + repeat * (span * 0.58) * -wind_dir
 			if x < start - 90.0 or x > finish + 90.0: continue
 			var wobble := sin(visual_time * 3.0 + row * 0.8) * 5.0
 			var points := PackedVector2Array([
-				Vector2(x + 82, y - 8 + wobble),
-				Vector2(x + 55, y - 2),
-				Vector2(x + 24, y + 3 - wobble * 0.25),
-				Vector2(x - 12, y + 1),
-				Vector2(x - 44, y + 7 + wobble * 0.2),
+				Vector2(x - wind_dir * 82.0, y - 8 + wobble),
+				Vector2(x - wind_dir * 55.0, y - 2),
+				Vector2(x - wind_dir * 24.0, y + 3 - wobble * 0.25),
+				Vector2(x + wind_dir * 12.0, y + 1),
+				Vector2(x + wind_dir * 44.0, y + 7 + wobble * 0.2),
 			])
 			draw_polyline(points, Color(1, 1, 1, alpha), 2.2, true)
 
-	# Small drifting debris makes wind strength legible without looking like a UI effect.
-	for i in range(10):
-		var drift := fposmod(visual_time * (115.0 + i * 4.0) + i * 97.0, span + 90.0)
-		var x := finish + 45.0 - drift
-		if x < start - 25.0 or x > finish + 25.0: continue
-		var y := 465.0 + float((i * 37) % 150) + sin(visual_time * 4.0 + i) * 7.0
-		var size := 2.0 + float(i % 3)
-		draw_circle(Vector2(x, y), size, Color("b6caa8", 0.55))
-		draw_line(Vector2(x + 7, y - 2), Vector2(x - 8, y + 3), Color(1, 1, 1, 0.38), 1.5, true)
+	# Leaves/paper scraps are stronger references than abstract particles.
+	for i in range(12):
+		var drift := fposmod(visual_time * (118.0 + i * 4.0) + i * 89.0, span + 110.0)
+		var x := finish + 55.0 - drift if wind_dir < 0.0 else start - 55.0 + drift
+		if x < start - 30.0 or x > finish + 30.0: continue
+		var y := 458.0 + float((i * 37) % 158) + sin(visual_time * 4.5 + i) * 9.0
+		var angle := visual_time * (2.0 + i * 0.08) + i
+		var leaf_len := 8.0 + float(i % 3) * 2.0
+		var tangent := Vector2(cos(angle), sin(angle)) * leaf_len
+		draw_line(Vector2(x, y) - tangent * 0.5, Vector2(x, y) + tangent * 0.5, Color("8fbd72", 0.72), 3.0, true)
+		if i % 4 == 0:
+			var paper := Rect2(Vector2(x - 4.0, y - 3.0), Vector2(9.0, 6.0))
+			draw_rect(paper, Color(1, 1, 1, 0.72), true)
 
-	# A subtle ground dust trail anchors the wind to the world.
-	for i in range(6):
-		var dust_x := finish - fposmod(visual_time * 95.0 + i * 71.0, span)
+	# Ground dust drifts in exactly the same direction as flags and leaves.
+	for i in range(7):
+		var phase := fposmod(visual_time * 96.0 + i * 71.0, span)
+		var dust_x := finish - phase if wind_dir < 0.0 else start + phase
 		var dust_y := 630.0 - float(i % 3) * 5.0
 		draw_circle(Vector2(dust_x, dust_y), 4.0 + i % 2, Color(0.78, 0.86, 0.75, 0.18))
+
+func draw_wind_flag(base: Vector2, wind_dir: float, strength: float, index: int) -> void:
+	var pole_height := 78.0
+	var top := base + Vector2(0, -pole_height)
+	draw_line(base, top, Color("60859b"), 4.0, true)
+	draw_circle(base, 5.0, Color("8bcdf4"))
+	var flutter := sin(visual_time * (6.0 + strength * 4.0) + index * 1.7) * (5.0 + strength * 5.0)
+	var length := 38.0 + strength * 34.0
+	var p0 := top + Vector2(0, 7)
+	var p1 := p0 + Vector2(wind_dir * length * 0.42, flutter * 0.35)
+	var p2 := p0 + Vector2(wind_dir * length * 0.74, -flutter * 0.3 + 8.0)
+	var p3 := p0 + Vector2(wind_dir * length, flutter * 0.45 + 4.0)
+	var flag := PackedVector2Array([
+		p0,
+		p1 + Vector2(0, -8),
+		p2 + Vector2(0, -5),
+		p3,
+		p2 + Vector2(0, 9),
+		p1 + Vector2(0, 10),
+	])
+	draw_colored_polygon(flag, Color(ProductionTheme.ORANGE, 0.82))
+	draw_polyline(PackedVector2Array([p0, p1, p2, p3]), Color(1, 1, 1, 0.6), 1.5, true)
+
+func draw_wind_grass(base: Vector2, wind_dir: float, strength: float, index: int) -> void:
+	var sway := wind_dir * (8.0 + strength * 15.0)
+	var flutter := sin(visual_time * 5.0 + index * 0.9) * 2.2 * strength
+	for blade in range(3):
+		var origin := base + Vector2((blade - 1) * 4.0, 0)
+		var height := 15.0 + blade * 4.0
+		var tip := origin + Vector2(sway + flutter + blade * wind_dir * 2.0, -height)
+		draw_line(origin, tip, Color("63b879", 0.72), 2.2, true)
